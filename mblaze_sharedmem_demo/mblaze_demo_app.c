@@ -53,26 +53,59 @@
 #include "xil_printf.h"
 #include <stdio.h>
 #include <math.h>
+#include <xil_exception.h>
+#include "xintc.h"
 
-#define AXI_IP_TEST_BASE_ADDR 0x44A00000U
-#define AXI_IP_TEST_BUILD_DATE (AXI_IP_TEST_BASE_ADDR+8)
 
-uint32_t* bramPtr_countIdx = (uint32_t*)(XPAR_BRAM_MBLAZE_CTRL_A_S_AXI_BASEADDR + 12); // 4 byte offset
+#define AXI_IP_TEST_BUILD_DATE (XPAR_PICOZED_T_IP_0_BASEADDR+8)
+#define AXI_IP_TEST_LATENCY_MEASURE (XPAR_PICOZED_T_IP_0_BASEADDR + 0x118)
+#define AXI_IP_TEST_IRQ (0x43C00104)
+
+uint32_t* bramPtr_countIdx = (uint32_t*)(XPAR_MICROBLAZE_BRAM_CTRL_S_AXI_BASEADDR + 12); // 4 byte offset
+
+uint32_t* LatencyControl = (uint32_t*)(AXI_IP_TEST_LATENCY_MEASURE);
+
+float globalValue; // for testing..
 
 void updateCountReg(uint32_t value)
 {
 	*bramPtr_countIdx = value; // update count register
-	printf("Divide example (%d / PI) = %f  \n", value, (float)(value/M_PI));
+	//printf("Divide example (%d / PI) = %f  \n", value, (float)(value/M_PI));
 }
+
+void MyIsr_0(void *CallbackRef) {
+
+	// turn off latency counter immediately
+	*((uint32_t *)AXI_IP_TEST_LATENCY_MEASURE) = 1;
+      // Add your specific interrupt handling logic here
+
+	//xil_printf("ISR0: Interrupt occurred! \n");
+
+    *((uint32_t *)AXI_IP_TEST_LATENCY_MEASURE) = 0;
+}
+
+void MyIsr_1(void *CallbackRef) {
+	// Add your specific interrupt handling logic here
+   //xil_printf("ISR1: Interrupt occurred! \n");
+	globalValue += *bramPtr_countIdx  / M_PI;
+}
+
+
+XIntc InterruptController; // Instance of the Interrupt Controller
+
+
+
 
 int main()
 {
 	/** System Setup **/
 
+
+
 	// Current switch value will be stored here
-	uint8_t* bramPtr_idx0 = (uint8_t*)XPAR_BRAM_MBLAZE_CTRL_A_S_AXI_BASEADDR; // one byte access
-	uint32_t* bramPtr_idx1 = (uint32_t*)(XPAR_BRAM_MBLAZE_CTRL_A_S_AXI_BASEADDR + 4); // 4 byte offset
-	uint32_t* bramPtr_idx2 = (uint32_t*)(XPAR_BRAM_MBLAZE_CTRL_A_S_AXI_BASEADDR + 8); // 4 byte offset
+	uint8_t* bramPtr_idx0 = (uint8_t*)XPAR_MICROBLAZE_BRAM_CTRL_S_AXI_BASEADDR; // one byte access
+	uint32_t* bramPtr_idx1 = (uint32_t*)(XPAR_MICROBLAZE_BRAM_CTRL_S_AXI_BASEADDR + 4); // 4 byte offset
+	uint32_t* bramPtr_idx2 = (uint32_t*)(XPAR_MICROBLAZE_BRAM_CTRL_S_AXI_BASEADDR + 8); // 4 byte offset
 
 
 	uint8_t tmpVal0 = 0;
@@ -83,9 +116,58 @@ int main()
 
     init_platform(); // unsure if this is needed unless we are cacheing???
 
+    int Status;
+
+    // Initialize the AXI Interrupt Controller
+    Status = XIntc_Initialize(&InterruptController, XPAR_MBLAZE_AXI_IRQ_CTRL_DEVICE_ID);
+    if (Status != XST_SUCCESS) {
+        xil_printf("AXI Interrupt Controller initialization failed!\\n\\r");
+        return XST_FAILURE;
+    }
+
+    // Connect the ISR to the AXI Interrupt Controller - callback
+   Status = XIntc_Connect(&InterruptController, XPAR_MBLAZE_AXI_IRQ_CTRL_PICOZED_T_IP_0_ISR_TRIGGER_0_INTR,
+						  (XInterruptHandler)MyIsr_0, (void *)0);
+   if (Status != XST_SUCCESS) {
+	   xil_printf("ISR0: Connecting ISR to Interrupt Controller failed!\\n\\r");
+	   return XST_FAILURE;
+   }
+
+   Status = XIntc_Connect(&InterruptController, XPAR_MBLAZE_AXI_IRQ_CTRL_PICOZED_T_IP_0_ISR_TRIGGER_1_INTR,
+						  (XInterruptHandler)MyIsr_1, (void *)0);
+   if (Status != XST_SUCCESS) {
+	   xil_printf("ISR1: Connecting ISR to Interrupt Controller failed!\\n\\r");
+	   return XST_FAILURE;
+   }
+
+   // Start the AXI Interrupt Controller
+   Status = XIntc_Start(&InterruptController, XIN_REAL_MODE);
+   if (Status != XST_SUCCESS) {
+	   xil_printf("Starting Interrupt Controller failed!\\n\\r");
+	   return XST_FAILURE;
+   }
+
+   // Enable all interrupts
+   XIntc_Enable(&InterruptController,
+                 XPAR_MBLAZE_AXI_IRQ_CTRL_PICOZED_T_IP_0_ISR_TRIGGER_0_INTR);
+
+   XIntc_Enable(&InterruptController,
+                 XPAR_MBLAZE_AXI_IRQ_CTRL_PICOZED_T_IP_0_ISR_TRIGGER_1_INTR);
+
+   // Initialize and enable MicroBlaze exceptions
+   Xil_ExceptionInit();
+   Xil_ExceptionRegisterHandler(XIL_EXCEPTION_ID_INT,
+								(Xil_ExceptionHandler)XIntc_InterruptHandler,
+								&InterruptController);
+   Xil_ExceptionEnable(); // this will enable interrupts underneath
+
+   // Enable interrupts in your peripheral (e.g., XGpio_InterruptEnable(&Gpio, GPIO_CHANNEL);)
+
+   xil_printf("Done setting up interrupts...\n");
+
+
     /** Application Loop **/
 	*bramPtr_idx0 = 12; // write some constant value in BRAM
-
 
 	printf(" ================================================ \n");
 	printf(" ================================================ \n");
@@ -107,8 +189,8 @@ int main()
 
 		if (tmpVal0 != *bramPtr_idx0)
 		{
-			printf(" !!!! Value changed  !!!!\n");
-			printf("0x%x: New Value = %u \n",bramPtr_idx0,*bramPtr_idx0);
+			//printf(" !!!! Value changed  !!!!\n");
+			//printf("0x%x: New Value = %u \n",bramPtr_idx0,*bramPtr_idx0);
 			tmpVal0 = *bramPtr_idx0; // update old value...
 			writeCount += 1;
 			updateCountReg(writeCount);
@@ -117,8 +199,8 @@ int main()
 
 		if (tmpVal1 != *bramPtr_idx1)
 		{
-			printf(" !!!! Value changed  !!!!\n");
-			printf("0x%x: New Value = %u \n",bramPtr_idx1, *bramPtr_idx1);
+			//printf(" !!!! Value changed  !!!!\n");
+			//printf("0x%x: New Value = %u \n",bramPtr_idx1, *bramPtr_idx1);
 			tmpVal1 = *bramPtr_idx1;
 			writeCount += 1;
 			updateCountReg(writeCount);
@@ -126,8 +208,8 @@ int main()
 
 		if (tmpVal2 != *bramPtr_idx2)
 		{
-			printf(" !!!! Value changed  !!!!\n");
-			printf("0x%x: New Value = %u \n",bramPtr_idx2, *bramPtr_idx2);
+			//printf(" !!!! Value changed  !!!!\n");
+			//printf("0x%x: New Value = %u \n",bramPtr_idx2, *bramPtr_idx2);
 			tmpVal2 = *bramPtr_idx2;
 			writeCount += 1;
 			updateCountReg(writeCount);
