@@ -60,6 +60,7 @@
 #define AXI_IP_TEST_BUILD_DATE (XPAR_PICOZED_T_IP_0_BASEADDR+8)
 #define AXI_IP_TEST_LATENCY_MEASURE (XPAR_PICOZED_T_IP_0_BASEADDR + 0x118)
 #define AXI_IP_TEST_IRQ (0x43C00104)
+#define ENABLE_PRINT 1
 
 uint32_t* bramPtr_countIdx = (uint32_t*)(XPAR_MICROBLAZE_BRAM_CTRL_S_AXI_BASEADDR + 12); // 4 byte offset
 
@@ -70,24 +71,33 @@ float globalValue; // for testing..
 void updateCountReg(uint32_t value)
 {
 	*bramPtr_countIdx = value; // update count register
-	//printf("Divide example (%d / PI) = %f  \n", value, (float)(value/M_PI));
+	if (ENABLE_PRINT)
+	{
+		printf("Divide example (%d / PI) = %f  \n", value, (float)(value/M_PI));
+	}
+
 }
 
 void MyIsr_0(void *CallbackRef) {
 
-	// turn off latency counter immediately
+
 	*((uint32_t *)AXI_IP_TEST_LATENCY_MEASURE) = 1;
-      // Add your specific interrupt handling logic here
-
-	//xil_printf("ISR0: Interrupt occurred! \n");
-
     *((uint32_t *)AXI_IP_TEST_LATENCY_MEASURE) = 0;
+
+    if (ENABLE_PRINT)
+	{
+    		printf("ISR0: Got interrupt! \n");
+	}
 }
 
 void MyIsr_1(void *CallbackRef) {
 	// Add your specific interrupt handling logic here
    //xil_printf("ISR1: Interrupt occurred! \n");
 	globalValue += *bramPtr_countIdx  / M_PI;
+	if (ENABLE_PRINT)
+    {
+		printf("ISR1: Got timer interrupt! \n");
+    }
 }
 
 
@@ -98,9 +108,6 @@ XIntc InterruptController; // Instance of the Interrupt Controller
 
 int main()
 {
-	/** System Setup **/
-
-
 
 	// Current switch value will be stored here
 	uint8_t* bramPtr_idx0 = (uint8_t*)XPAR_MICROBLAZE_BRAM_CTRL_S_AXI_BASEADDR; // one byte access
@@ -189,8 +196,6 @@ int main()
 
 		if (tmpVal0 != *bramPtr_idx0)
 		{
-			//printf(" !!!! Value changed  !!!!\n");
-			//printf("0x%x: New Value = %u \n",bramPtr_idx0,*bramPtr_idx0);
 			tmpVal0 = *bramPtr_idx0; // update old value...
 			writeCount += 1;
 			updateCountReg(writeCount);
@@ -199,8 +204,6 @@ int main()
 
 		if (tmpVal1 != *bramPtr_idx1)
 		{
-			//printf(" !!!! Value changed  !!!!\n");
-			//printf("0x%x: New Value = %u \n",bramPtr_idx1, *bramPtr_idx1);
 			tmpVal1 = *bramPtr_idx1;
 			writeCount += 1;
 			updateCountReg(writeCount);
@@ -208,8 +211,6 @@ int main()
 
 		if (tmpVal2 != *bramPtr_idx2)
 		{
-			//printf(" !!!! Value changed  !!!!\n");
-			//printf("0x%x: New Value = %u \n",bramPtr_idx2, *bramPtr_idx2);
 			tmpVal2 = *bramPtr_idx2;
 			writeCount += 1;
 			updateCountReg(writeCount);
