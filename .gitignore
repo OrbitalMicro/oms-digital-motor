@@ -1,0 +1,14 @@
+# docker env
+.bash_history
+docker/*.tar.gz
+
+# vivado
+vivado*.log
+vivado*.jou
+.oracle_jre_usage/
+.java/
+
+# editors
+*.swp
+.viminfo
+*~
