@@ -1,12 +1,15 @@
 # docker env
 .bash_history
 docker/*.tar.gz
+build.log
 
 # vivado
+.Xilinx/
 vivado*.log
 vivado*.jou
 .oracle_jre_usage/
 .java/
+.cache/
 
 # editors
 *.swp
