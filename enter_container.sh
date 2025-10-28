@@ -30,9 +30,10 @@ while true; do
     esac
 done
 
+xhost + local:docker
 echo "Using tag: ${TAG}"
 WORKDIR="/home/developer"
-docker run --rm --interactive --tty --privileged=true --net=host --env DISPLAY=$DISPLAY \
+docker run --rm --interactive --tty --privileged=true --network=host --env DISPLAY=$DISPLAY \
     --mount source=/tmp/.X11-unix,destination=/tmp/.X11-unix,type=bind,readonly \
     --mount source=${PWD},destination=${WORKDIR},type=bind \
     --mount source=/dev/bus/usb/,destination=/dev/bus/usb/,type=bind \
