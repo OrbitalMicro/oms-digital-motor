@@ -1,0 +1,7 @@
+test_ip/picozed_test_ip/MeasureLatency/Detect Increase --> picozed_t_ip_src_Detect_Increase
+test_ip/picozed_test_ip/MeasureLatency/Detect Increase1 --> picozed_t_ip_src_Detect_Increase1
+test_ip/picozed_test_ip/MeasureLatency/counterControl --> picozed_t_ip_src_counterControl
+test_ip/picozed_test_ip/MeasureLatency --> picozed_t_ip_src_MeasureLatency
+test_ip/picozed_test_ip/TimerISR --> picozed_t_ip_src_TimerISR
+test_ip/picozed_test_ip/countFSM --> picozed_t_ip_src_countFSM
+test_ip/picozed_test_ip --> picozed_t_ip_src_picozed_test_ip
