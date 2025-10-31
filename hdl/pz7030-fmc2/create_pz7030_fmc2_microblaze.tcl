@@ -954,6 +954,6 @@ import_files -force -norecurse ${vivado_bd_loc}/hdl/pz7030_fmc2_base_wrapper.v
 ##################################################################
 # Constraint Files
 ##################################################################
-set board_file_loc [file normalize [pwd]/../Boards/PZ7030_FMC2/]
+set board_file_loc [file normalize [pwd]/Boards/PZ7030_FMC2/]
 
 add_files -fileset constrs_1 -norecurse ${board_file_loc}/PZ7030_FMC2_i2c.xdc 
