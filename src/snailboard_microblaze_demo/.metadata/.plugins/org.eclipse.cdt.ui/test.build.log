@@ -1,0 +1,14 @@
+14:07:43 **** Incremental Build of configuration Debug for project test ****
+make all 
+Building file: ../test_bsp/microblaze_0/libsrc/standalone_v6_8/src/profile/_profile_clean.c
+Invoking: MicroBlaze gcc compiler
+mb-gcc -Wall -O0 -g3 -c -fmessage-length=0 -MT"test_bsp/microblaze_0/libsrc/standalone_v6_8/src/profile/_profile_clean.o" -I/media/extradrive1/gitrepos/oms-digital-hdl/hdl/motor_interface/vsim_tb/app_test/test_bsp/microblaze_0/include -mlittle-endian -mcpu=v11.0 -mxl-soft-mul -Wl,--no-relax -ffunction-sections -fdata-sections -MMD -MP -MF"test_bsp/microblaze_0/libsrc/standalone_v6_8/src/profile/_profile_clean.d" -MT"test_bsp/microblaze_0/libsrc/standalone_v6_8/src/profile/_profile_clean.o" -o "test_bsp/microblaze_0/libsrc/standalone_v6_8/src/profile/_profile_clean.o" "../test_bsp/microblaze_0/libsrc/standalone_v6_8/src/profile/_profile_clean.c"
+In file included from ../test_bsp/microblaze_0/libsrc/standalone_v6_8/src/profile/_profile_clean.c:30:0:
+../test_bsp/microblaze_0/libsrc/standalone_v6_8/src/profile/_profile_timer_hw.h:89:10: fatal error: xtmrctr_l.h: No such file or directory
+ #include "xtmrctr_l.h"
+          ^~~~~~~~~~~~~
+compilation terminated.
+make: *** [test_bsp/microblaze_0/libsrc/standalone_v6_8/src/profile/subdir.mk:48: test_bsp/microblaze_0/libsrc/standalone_v6_8/src/profile/_profile_clean.o] Error 1
+
+14:07:44 Build Finished (took 163ms)
+

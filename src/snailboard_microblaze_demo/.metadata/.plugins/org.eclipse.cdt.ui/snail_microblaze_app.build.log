@@ -1,0 +1,6 @@
+16:26:32 **** Incremental Build of configuration Debug for project snail_microblaze_app ****
+make all 
+make: Nothing to be done for 'all'.
+
+16:26:32 Build Finished (took 124ms)
+
