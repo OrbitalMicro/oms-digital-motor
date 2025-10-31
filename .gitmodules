@@ -1,0 +1,4 @@
+[submodule "hdl/gems2-fpga"]
+	path = hdl/gems2-fpga
+	url = git@github.com:OrbitalMicro/oms-digital-hdl.git
+	branch = master
